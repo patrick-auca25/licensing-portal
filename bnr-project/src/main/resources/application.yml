@@ -10,7 +10,7 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     show-sql: false
     properties:
       hibernate:
@@ -22,6 +22,8 @@ spring:
       mode: always
       schema-locations: classpath:db/schema.sql
       data-locations: classpath:db/seed.sql
+      separator: ;
+      continue-on-error: false
 
   servlet:
     multipart:
@@ -37,7 +39,7 @@ spring:
 app:
   jwt:
     secret: BNR_JWT_SECRET_KEY_MUST_BE_AT_LEAST_256_BITS_LONG_FOR_SECURITY_2026
-    expiration-ms: 3600000  # 1 hour
+    expiration-ms: 3600000
   upload:
     base-dir: ./uploads
   base-url: http://localhost:8080

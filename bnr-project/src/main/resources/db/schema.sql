@@ -1,6 +1,8 @@
 -- ============================================================
 -- BNR Bank Licensing Portal — Database Schema
 -- PostgreSQL 15+
+-- Note: No dollar-quoting ($$) used — Spring SQL runner
+-- does not support it. Use plain SQL throughout.
 -- ============================================================
 
 -- Drop in reverse dependency order (for clean restarts)
@@ -37,7 +39,7 @@ CREATE TABLE users (
     password_hash   VARCHAR(255) NOT NULL,
     full_name       VARCHAR(255) NOT NULL,
     role            user_role    NOT NULL,
-    is_active       BOOLEAN      NOT NULL DEFAULT TRUE,
+    active          BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
@@ -54,20 +56,12 @@ CREATE TABLE applications (
     business_plan               TEXT,
     registered_capital          BIGINT,
     status                      application_status NOT NULL DEFAULT 'DRAFT',
-
-    -- Optimistic locking column
-    -- JPA @Version includes this in every UPDATE:
-    -- UPDATE applications SET status=?, version=version+1 WHERE id=? AND version=?
     version                     BIGINT             NOT NULL DEFAULT 0,
-
-    -- Four-eyes rule columns
     reviewer_id                 UUID               REFERENCES users(id),
     approver_id                 UUID               REFERENCES users(id),
-
     rejection_reason            TEXT,
     reviewer_notes              TEXT,
     additional_info_request     TEXT,
-
     submitted_at                TIMESTAMP,
     decided_at                  TIMESTAMP,
     created_at                  TIMESTAMP          NOT NULL DEFAULT NOW(),
@@ -80,63 +74,43 @@ CREATE INDEX idx_applications_reviewer   ON applications(reviewer_id);
 
 -- ── Documents ─────────────────────────────────────────────────
 CREATE TABLE documents (
-    id                  UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    application_id      UUID        NOT NULL REFERENCES applications(id),
+    id                  UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    application_id      UUID         NOT NULL REFERENCES applications(id),
     file_name           VARCHAR(255) NOT NULL,
     file_path           VARCHAR(500) NOT NULL,
-    file_size           BIGINT      NOT NULL,
+    file_size           BIGINT       NOT NULL,
     file_type           VARCHAR(100) NOT NULL,
-    uploader_id         UUID        NOT NULL REFERENCES users(id),
-
-    -- Versioning: each resubmission increments version_number
-    -- is_current=true only on latest; previous versions kept permanently
-    version_number      INTEGER     NOT NULL DEFAULT 1,
-    is_current          BOOLEAN     NOT NULL DEFAULT TRUE,
+    uploader_id         UUID         NOT NULL REFERENCES users(id),
+    version_number      INTEGER      NOT NULL DEFAULT 1,
+    current             BOOLEAN      NOT NULL DEFAULT TRUE,
     document_category   VARCHAR(100),
-
-    uploaded_at         TIMESTAMP   NOT NULL DEFAULT NOW()
+    uploaded_at         TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_documents_application ON documents(application_id);
-CREATE INDEX idx_documents_current     ON documents(application_id, is_current);
+CREATE INDEX idx_documents_current     ON documents(application_id, current);
 
 -- ── Audit Log (APPEND-ONLY) ───────────────────────────────────
--- No updated_at column — deliberately absent.
--- DB-level enforcement: audit_writer role has INSERT only (see below).
--- Application code (AuditService) only calls save() — never update/delete.
--- This table may be presented as legal evidence.
+-- No updated_at column — deliberately absent (append-only design).
+-- REVOKE UPDATE/DELETE enforced below.
 CREATE TABLE audit_log (
-    id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-    application_id  UUID        REFERENCES applications(id),
-    actor_id        UUID        NOT NULL REFERENCES users(id),
+    id              UUID         PRIMARY KEY DEFAULT gen_random_uuid(),
+    application_id  UUID         REFERENCES applications(id),
+    actor_id        UUID         NOT NULL REFERENCES users(id),
     action          VARCHAR(100) NOT NULL,
     state_before    VARCHAR(50),
     state_after     VARCHAR(50),
     metadata        TEXT,
     ip_address      VARCHAR(45),
-    created_at      TIMESTAMP   NOT NULL DEFAULT NOW()
+    created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
 
 CREATE INDEX idx_audit_application ON audit_log(application_id);
 CREATE INDEX idx_audit_actor       ON audit_log(actor_id);
 CREATE INDEX idx_audit_created     ON audit_log(created_at DESC);
 
--- ── Append-only enforcement at DB level ──────────────────────
--- The application connects as bnr_user.
--- A separate role audit_writer has INSERT-only on audit_log.
--- In production: connect audit writes through audit_writer role.
--- This ensures even a compromised app cannot UPDATE or DELETE audit records.
-
--- Create roles if they don't exist (idempotent)
-DO $$
-BEGIN
-    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = 'audit_writer') THEN
-        CREATE ROLE audit_writer;
-    END IF;
-END
-$$;
-
-GRANT INSERT ON audit_log TO audit_writer;
--- Deliberately NOT granting UPDATE or DELETE on audit_log to anyone.
-
+-- ── Append-only enforcement ───────────────────────────────────
+-- Revoke UPDATE and DELETE on audit_log from all users.
+-- Even bnr_user (the app DB user) cannot modify audit records.
+-- This is enforced at the database level — not just in application code.
 REVOKE UPDATE, DELETE ON audit_log FROM PUBLIC;

@@ -43,7 +43,7 @@ public class Document {
     @Builder.Default
     private Integer versionNumber = 1;
 
-    @Column(name = "is_current", nullable = false)
+    @Column(name = "current", nullable = false)
     @Builder.Default
     private boolean current = true;
 

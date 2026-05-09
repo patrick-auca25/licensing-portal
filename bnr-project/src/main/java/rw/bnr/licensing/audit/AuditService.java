@@ -27,8 +27,8 @@ public class AuditService {
 
     private final AuditLogRepository auditLogRepository;
 
-    // ── State transition ─────────────────────────────────────────────────
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // ── State transition — REQUIRED: joins caller transaction (app FK must exist)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void logTransition(User actor, Application application,
                                ApplicationStatus from, ApplicationStatus to,
                                String metadata) {
@@ -42,8 +42,8 @@ public class AuditService {
                 .build());
     }
 
-    // ── Document upload ──────────────────────────────────────────────────
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    // ── Document upload — REQUIRED: joins caller transaction (app FK must exist)
+    @Transactional(propagation = Propagation.REQUIRED)
     public void logDocumentUpload(User actor, Application application,
                                    String fileName, int versionNumber) {
         save(AuditLog.builder()
