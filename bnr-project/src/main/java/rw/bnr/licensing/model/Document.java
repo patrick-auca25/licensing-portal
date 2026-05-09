@@ -45,7 +45,10 @@ public class Document {
 
     @Column(name = "is_current", nullable = false)
     @Builder.Default
-    private boolean isCurrent = true;
+    private boolean current = true;
+
+    public boolean isCurrent() { return current; }
+    public void setCurrent(boolean current) { this.current = current; }
 
     @Column(name = "document_category")
     private String documentCategory;

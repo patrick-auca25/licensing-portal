@@ -31,7 +31,10 @@ public class User {
 
     @Column(name = "is_active", nullable = false)
     @Builder.Default
-    private boolean isActive = true;
+    private boolean active = true;
+
+    public boolean isActive() { return active; }
+    public void setActive(boolean active) { this.active = active; }
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

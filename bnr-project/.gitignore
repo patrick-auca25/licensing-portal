@@ -1,0 +1,27 @@
+# Maven
+target/
+*.class
+*.jar
+*.war
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.eclipse
+
+# Spring Boot
+*.log
+logs/
+
+# Uploads (local dev only)
+uploads/
+test-uploads/
+
+# Environment
+.env
+application-local.yml
+
+# OS
+.DS_Store
+Thumbs.db
