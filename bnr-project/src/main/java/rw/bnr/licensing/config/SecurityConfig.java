@@ -17,30 +17,26 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import rw.bnr.licensing.security.*;
 
 /**
- * SecurityConfig — the central security configuration.
+ * SecurityConfig
  *
- * Key decisions explained:
+ * Architecture decision:
+ * - HTML page routes (/applicant/**, /reviewer/**, etc.) are PERMITTED at the
+ *   Spring Security URL level. The browser has no JWT when navigating directly.
+ *   Page-level access control is handled by the JS in each page (redirects to
+ *   /login if Auth.isLoggedIn() is false).
  *
- * 1. STATELESS session — JWT is stateless so we tell Spring NOT to create
- *    HTTP sessions. Every request must carry its own JWT.
+ * - API routes (/api/**) are where REAL security enforcement happens:
+ *   JWT filter + @PreAuthorize on every controller method. A user who calls
+ *   the API without a valid token gets 401. Wrong role gets 403.
  *
- * 2. CSRF disabled — CSRF protection is for session-based auth where a browser
- *    automatically sends cookies. With JWT in Authorization header, CSRF is
- *    not applicable. Disabling it avoids breaking the REST API.
+ * - The 401/403 JSON handlers only fire for /api/** requests, so browser
+ *   navigation never gets a raw JSON error response.
  *
- * 3. @EnableMethodSecurity — enables @PreAuthorize annotations on controller
- *    methods. This is where role enforcement happens at the METHOD level,
- *    not just URL level. A user who bypasses the frontend is still denied here.
- *
- * 4. Public endpoints — /api/auth/** (login) and static assets are open.
- *    Everything else requires authentication.
- *
- * 5. JwtAuthFilter runs BEFORE UsernamePasswordAuthenticationFilter —
- *    this ensures JWT is validated before Spring's default auth kicks in.
+ * This is the standard pattern for JWT + server-side rendered hybrid apps.
  */
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity           // enables @PreAuthorize on controller methods
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -50,23 +46,35 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // Disable CSRF — not needed for stateless JWT API
             .csrf(AbstractHttpConfigurer::disable)
 
-            // Stateless — no HTTP session created or used
+            // STATELESS — JWT only, no server-side sessions
             .sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-            // URL-level authorization rules
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
-                .requestMatchers("/api/auth/**").permitAll()
-                .requestMatchers("/login", "/css/**", "/js/**", "/error").permitAll()
-                // Everything else requires authentication
+                // ── Public: auth API + static assets + ALL page routes ──────
+                // Page routes are open because the browser has no JWT on direct
+                // navigation. Real protection is in the JS + API @PreAuthorize.
+                .requestMatchers(
+                    "/api/auth/**",
+                    "/login", "/logout", "/",
+                    "/css/**", "/js/**", "/images/**",
+                    "/error",
+                    "/applicant/**",
+                    "/reviewer/**",
+                    "/approver/**",
+                    "/admin/**"
+                ).permitAll()
+
+                // ── All /api/** routes require authentication ────────────────
+                .requestMatchers("/api/**").authenticated()
+
                 .anyRequest().authenticated()
             )
 
-            // Custom 401 and 403 responses — no redirects for REST API calls
+            // 401/403 handlers — only meaningful for /api/** calls
+            // Browser page navigation never hits these because pages are permitted
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((request, response, authException) -> {
                     response.setStatus(401);
@@ -84,19 +92,16 @@ public class SecurityConfig {
                 })
             )
 
-            // Register JWT filter before Spring's default auth filter
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // ── Password encoder — BCrypt strength 12 ───────────────────────────
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(12);
     }
 
-    // ── Authentication provider — ties UserDetailsService + PasswordEncoder
     @Bean
     public DaoAuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -105,7 +110,6 @@ public class SecurityConfig {
         return provider;
     }
 
-    // ── AuthenticationManager — used by AuthController to authenticate login
     @Bean
     public AuthenticationManager authenticationManager(
             AuthenticationConfiguration config) throws Exception {
