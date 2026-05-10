@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Approver Dashboard — BNR Licensing Portal</title>
+  <link rel="stylesheet" href="/css/main.css"/>
+</head>
+<body>
+<div class="layout">
+  <div th:replace="~{shared/layout :: sidebar('dashboard')}"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Approver Dashboard</span>
+    </div>
+    <div class="content">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Pending Decision</div>
+          <div class="stat-value" id="stat-pending" style="color:var(--warning)">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Approved</div>
+          <div class="stat-value" id="stat-approved" style="color:var(--success)">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Rejected</div>
+          <div class="stat-value" id="stat-rejected" style="color:var(--danger)">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Applications Awaiting Decision</span></div>
+        <div class="card-body" style="padding:0">
+          <div id="loading" class="loading">Loading...</div>
+          <div id="empty" class="state-empty" style="display:none">
+            <div class="icon">✓</div>
+            <p>No applications awaiting your decision.</p>
+          </div>
+          <div class="table-wrap" id="table-wrap" style="display:none">
+            <table>
+              <thead>
+                <tr><th>Reference</th><th>Institution</th><th>Type</th><th>Capital (RWF)</th><th>Status</th><th>Reviewer</th><th>Action</th></tr>
+              </thead>
+              <tbody id="app-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!Auth.isLoggedIn()) window.location.href = '/login';
+
+  async function load() {
+    try {
+      const apps = await API.get('/api/applications', Auth.token());
+      document.getElementById('loading').style.display = 'none';
+
+      document.getElementById('stat-pending').textContent =
+        apps.filter(a => a.status === 'REVIEWED').length;
+      document.getElementById('stat-approved').textContent =
+        apps.filter(a => a.status === 'APPROVED').length;
+      document.getElementById('stat-rejected').textContent =
+        apps.filter(a => a.status === 'REJECTED').length;
+
+      if (apps.length === 0) { document.getElementById('empty').style.display='block'; return; }
+      document.getElementById('table-wrap').style.display = 'block';
+
+      document.getElementById('app-list').innerHTML = apps.map(app => `
+        <tr>
+          <td><code style="font-family:var(--font-mono);font-size:.8rem">${app.referenceNumber}</code></td>
+          <td>${app.institutionName}</td>
+          <td>${app.institutionType}</td>
+          <td class="text-muted">${formatRWF(app.registeredCapital)}</td>
+          <td>${statusBadge(app.status)}</td>
+          <td class="text-muted">${app.reviewerName || '—'}</td>
+          <td><a href="/approver/applications/${app.id}" class="btn btn-outline btn-sm">
+            ${app.status === 'REVIEWED' ? 'Decide' : 'View'}
+          </a></td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('loading').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`;
+    }
+  }
+  load();
+</script>
+</body>
+</html>

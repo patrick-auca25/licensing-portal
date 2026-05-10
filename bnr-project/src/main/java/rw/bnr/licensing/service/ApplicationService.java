@@ -111,19 +111,10 @@ public class ApplicationService {
                 applications = applicationRepository.findByApplicantOrderByCreatedAtDesc(actor);
 
             case REVIEWER ->
-                // Reviewers see SUBMITTED and anything assigned to them
-                applications = applicationRepository.findByStatusIn(List.of(
-                        ApplicationStatus.SUBMITTED,
-                        ApplicationStatus.UNDER_REVIEW,
-                        ApplicationStatus.ADDITIONAL_INFO_REQUESTED,
-                        ApplicationStatus.REVIEWED));
+                applications = applicationRepository.findForReviewer();
 
             case APPROVER ->
-                // Approvers see REVIEWED applications awaiting decision
-                applications = applicationRepository.findByStatusIn(List.of(
-                        ApplicationStatus.REVIEWED,
-                        ApplicationStatus.APPROVED,
-                        ApplicationStatus.REJECTED));
+                applications = applicationRepository.findForApprover();
 
             case ADMIN ->
                 // Admin sees everything

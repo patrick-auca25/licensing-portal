@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Dashboard — BNR Licensing Portal</title>
+  <link rel="stylesheet" href="/css/main.css"/>
+</head>
+<body>
+<div class="layout">
+  <div th:replace="~{shared/layout :: sidebar('dashboard')}"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Dashboard</span>
+      <div class="topbar-actions">
+        <a href="/applicant/applications/new" class="btn btn-primary btn-sm">+ New Application</a>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stats -->
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Total Applications</div>
+          <div class="stat-value" id="stat-total">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Under Review</div>
+          <div class="stat-value" id="stat-review">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Approved</div>
+          <div class="stat-value" id="stat-approved" style="color:var(--success)">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Rejected</div>
+          <div class="stat-value" id="stat-rejected" style="color:var(--danger)">—</div>
+        </div>
+      </div>
+
+      <!-- Applications table -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">My Applications</span>
+          <a href="/applicant/applications/new" class="btn btn-outline btn-sm">New Application</a>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div id="loading" class="loading">Loading applications...</div>
+          <div id="empty" class="state-empty" style="display:none">
+            <div class="icon">📋</div>
+            <p>No applications yet. Start by submitting a new application.</p>
+            <a href="/applicant/applications/new" class="btn btn-primary mt-2">Submit Application</a>
+          </div>
+          <div class="table-wrap" id="table-wrap" style="display:none">
+            <table>
+              <thead>
+                <tr>
+                  <th>Reference</th>
+                  <th>Institution</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Submitted</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="app-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!Auth.isLoggedIn()) window.location.href = '/login';
+
+  async function loadDashboard() {
+    try {
+      const apps = await API.get('/api/applications', Auth.token());
+
+      // Stats
+      document.getElementById('stat-total').textContent = apps.length;
+      document.getElementById('stat-review').textContent =
+        apps.filter(a => ['UNDER_REVIEW','SUBMITTED','REVIEWED'].includes(a.status)).length;
+      document.getElementById('stat-approved').textContent =
+        apps.filter(a => a.status === 'APPROVED').length;
+      document.getElementById('stat-rejected').textContent =
+        apps.filter(a => a.status === 'REJECTED').length;
+
+      document.getElementById('loading').style.display = 'none';
+
+      if (apps.length === 0) {
+        document.getElementById('empty').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('table-wrap').style.display = 'block';
+      const tbody = document.getElementById('app-list');
+      tbody.innerHTML = apps.map(app => `
+        <tr>
+          <td><code style="font-family:var(--font-mono);font-size:.8rem">${app.referenceNumber}</code></td>
+          <td>${app.institutionName}</td>
+          <td>${app.institutionType}</td>
+          <td>${statusBadge(app.status)}</td>
+          <td class="text-muted">${app.submittedAt || '—'}</td>
+          <td>
+            <a href="/applicant/applications/${app.id}" class="btn btn-outline btn-sm">View</a>
+            ${app.status === 'DRAFT' ?
+              `<a href="/applicant/applications/${app.id}/edit" class="btn btn-outline btn-sm">Edit</a>` : ''}
+            ${app.status === 'ADDITIONAL_INFO_REQUESTED' ?
+              `<a href="/applicant/applications/${app.id}" class="btn btn-gold btn-sm">Respond</a>` : ''}
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('loading').innerHTML =
+        `<div class="alert alert-error">Failed to load applications: ${err.message}</div>`;
+    }
+  }
+
+  loadDashboard();
+</script>
+</body>
+</html>

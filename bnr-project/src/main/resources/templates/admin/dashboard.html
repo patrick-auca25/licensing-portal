@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Admin Dashboard — BNR Licensing Portal</title>
+  <link rel="stylesheet" href="/css/main.css"/>
+</head>
+<body>
+<div class="layout">
+  <div th:replace="~{shared/layout :: sidebar('dashboard')}"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Admin Dashboard</span>
+      <button class="btn btn-primary btn-sm" onclick="openModal('user-modal')">+ New User</button>
+    </div>
+    <div class="content">
+      <div class="stats-grid" id="stats-grid">
+        <div class="stat-card"><div class="stat-label">Total Applications</div><div class="stat-value" id="s-total">—</div></div>
+        <div class="stat-card"><div class="stat-label">Submitted</div><div class="stat-value" id="s-submitted" style="color:var(--info)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Under Review</div><div class="stat-value" id="s-review" style="color:var(--warning)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Approved</div><div class="stat-value" id="s-approved" style="color:var(--success)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Rejected</div><div class="stat-value" id="s-rejected" style="color:var(--danger)">—</div></div>
+        <div class="stat-card"><div class="stat-label">Total Users</div><div class="stat-value" id="s-users">—</div></div>
+      </div>
+
+      <!-- All applications -->
+      <div class="card mb-2" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">All Applications</span></div>
+        <div class="card-body" style="padding:0">
+          <div id="apps-loading" class="loading">Loading...</div>
+          <div class="table-wrap" id="apps-table" style="display:none">
+            <table>
+              <thead>
+                <tr><th>Reference</th><th>Institution</th><th>Applicant</th><th>Status</th><th>Submitted</th><th>Action</th></tr>
+              </thead>
+              <tbody id="apps-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Users -->
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">Users</span>
+          <button class="btn btn-outline btn-sm" onclick="openModal('user-modal')">+ Add User</button>
+        </div>
+        <div class="card-body" style="padding:0">
+          <div id="users-loading" class="loading">Loading...</div>
+          <div class="table-wrap" id="users-table" style="display:none">
+            <table>
+              <thead>
+                <tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Action</th></tr>
+              </thead>
+              <tbody id="users-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New user modal -->
+<div class="modal-overlay" id="user-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Create New User</span>
+      <button class="modal-close" onclick="closeModal('user-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="user-alert"></div>
+      <div class="form-group">
+        <label class="form-label">Full Name <span class="required">*</span></label>
+        <input type="text" id="u-name" class="form-control" placeholder="Full name"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email <span class="required">*</span></label>
+        <input type="email" id="u-email" class="form-control" placeholder="email@bnr.rw"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password <span class="required">*</span></label>
+        <input type="password" id="u-password" class="form-control" placeholder="Min 8 characters"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Role <span class="required">*</span></label>
+        <select id="u-role" class="form-control">
+          <option value="APPLICANT">APPLICANT</option>
+          <option value="REVIEWER">REVIEWER</option>
+          <option value="APPROVER">APPROVER</option>
+          <option value="ADMIN">ADMIN</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('user-modal')">Cancel</button>
+      <button class="btn btn-primary" id="user-confirm-btn" onclick="createUser()">Create User</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!Auth.isLoggedIn()) window.location.href = '/login';
+
+  async function loadAll() {
+    try {
+      const [apps, users] = await Promise.all([
+        API.get('/api/applications', Auth.token()),
+        API.get('/api/users', Auth.token())
+      ]);
+
+      // Stats
+      document.getElementById('s-total').textContent = apps.length;
+      document.getElementById('s-submitted').textContent = apps.filter(a=>a.status==='SUBMITTED').length;
+      document.getElementById('s-review').textContent = apps.filter(a=>a.status==='UNDER_REVIEW').length;
+      document.getElementById('s-approved').textContent = apps.filter(a=>a.status==='APPROVED').length;
+      document.getElementById('s-rejected').textContent = apps.filter(a=>a.status==='REJECTED').length;
+      document.getElementById('s-users').textContent = users.length;
+
+      // Apps table
+      document.getElementById('apps-loading').style.display = 'none';
+      document.getElementById('apps-table').style.display = 'block';
+      document.getElementById('apps-list').innerHTML = apps.map(a => `
+        <tr>
+          <td><code style="font-family:var(--font-mono);font-size:.8rem">${a.referenceNumber}</code></td>
+          <td>${a.institutionName}</td>
+          <td class="text-muted">${a.applicantName}</td>
+          <td>${statusBadge(a.status)}</td>
+          <td class="text-muted">${a.submittedAt||'—'}</td>
+          <td><a href="/admin/applications/${a.id}" class="btn btn-outline btn-sm">View</a></td>
+        </tr>
+      `).join('');
+
+      // Users table
+      document.getElementById('users-loading').style.display = 'none';
+      document.getElementById('users-table').style.display = 'block';
+      document.getElementById('users-list').innerHTML = users.map(u => `
+        <tr>
+          <td>${u.fullName}</td>
+          <td class="text-muted">${u.email}</td>
+          <td><span class="badge badge-draft">${u.role}</span></td>
+          <td>${u.active ?
+            '<span class="badge badge-approved">Active</span>' :
+            '<span class="badge badge-rejected">Inactive</span>'}</td>
+          <td>${u.active ?
+            `<button class="btn btn-outline btn-sm" onclick="deactivateUser('${u.id}')">Deactivate</button>` : '—'}
+          </td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('apps-loading').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`;
+    }
+  }
+
+  async function createUser() {
+    const btn = document.getElementById('user-confirm-btn');
+    setLoading(btn, true);
+    try {
+      await API.post('/api/users', {
+        fullName: document.getElementById('u-name').value.trim(),
+        email: document.getElementById('u-email').value.trim(),
+        password: document.getElementById('u-password').value,
+        role: document.getElementById('u-role').value
+      }, Auth.token());
+      closeModal('user-modal');
+      loadAll();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('user-alert'), err.message, 'error');
+    }
+  }
+
+  async function deactivateUser(id) {
+    if (!confirm('Deactivate this user?')) return;
+    try {
+      await API.request('PATCH', `/api/users/${id}/deactivate`, null, Auth.token());
+      loadAll();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  loadAll();
+</script>
+</body>
+</html>

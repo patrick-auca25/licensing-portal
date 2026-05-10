@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>New Application — BNR Licensing Portal</title>
+  <link rel="stylesheet" href="/css/main.css"/>
+</head>
+<body>
+<div class="layout">
+  <div th:replace="~{shared/layout :: sidebar('new')}"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">New Bank Licence Application</span>
+      <a href="/applicant/dashboard" class="btn btn-outline btn-sm">← Back</a>
+    </div>
+
+    <div class="content">
+      <div class="card" style="max-width:680px">
+        <div class="card-header">
+          <span class="card-title">Institution Details</span>
+        </div>
+        <div class="card-body">
+          <div id="alert-box"></div>
+
+          <form id="app-form">
+            <div class="form-group">
+              <label class="form-label">Institution Name <span class="required">*</span></label>
+              <input type="text" id="institutionName" class="form-control"
+                     placeholder="e.g. Kigali Commercial Bank Ltd" required maxlength="255"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Institution Type <span class="required">*</span></label>
+              <select id="institutionType" class="form-control" required>
+                <option value="">Select type...</option>
+                <option>Commercial Bank</option>
+                <option>Microfinance Institution</option>
+                <option>Savings and Credit Cooperative</option>
+                <option>Development Finance Institution</option>
+                <option>Digital Bank</option>
+                <option>Other</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Registered Capital (RWF)</label>
+              <input type="number" id="registeredCapital" class="form-control"
+                     placeholder="e.g. 5000000000" min="0"/>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Business Plan Summary</label>
+              <textarea id="businessPlan" class="form-control" rows="5"
+                        placeholder="Describe the institution's business model, target market, and strategic objectives..."
+                        maxlength="5000"></textarea>
+              <span class="text-muted">Max 5000 characters</span>
+            </div>
+
+            <div class="flex gap-2 mt-2">
+              <button type="submit" id="submit-btn" class="btn btn-primary">
+                Save as Draft
+              </button>
+              <button type="button" id="submit-now-btn" class="btn btn-gold">
+                Save &amp; Submit Now
+              </button>
+              <a href="/applicant/dashboard" class="btn btn-outline">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!Auth.isLoggedIn()) window.location.href = '/login';
+
+  let submitAfterSave = false;
+
+  function getFormData() {
+    return {
+      institutionName: document.getElementById('institutionName').value.trim(),
+      institutionType: document.getElementById('institutionType').value,
+      registeredCapital: document.getElementById('registeredCapital').value || null,
+      businessPlan: document.getElementById('businessPlan').value.trim()
+    };
+  }
+
+  document.getElementById('submit-now-btn').addEventListener('click', () => {
+    submitAfterSave = true;
+    document.getElementById('app-form').requestSubmit();
+  });
+
+  document.getElementById('app-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const btn = submitAfterSave ?
+      document.getElementById('submit-now-btn') :
+      document.getElementById('submit-btn');
+    const alertBox = document.getElementById('alert-box');
+    alertBox.innerHTML = '';
+    setLoading(btn, true);
+
+    try {
+      // Step 1: Create draft
+      const app = await API.post('/api/applications', getFormData(), Auth.token());
+
+      // Step 2: Submit immediately if requested
+      if (submitAfterSave) {
+        await API.post(`/api/applications/${app.id}/submit`, {}, Auth.token());
+        showAlert(alertBox,
+          `Application ${app.referenceNumber} submitted successfully.`, 'success');
+      } else {
+        showAlert(alertBox,
+          `Application ${app.referenceNumber} saved as draft.`, 'success');
+      }
+
+      setTimeout(() => {
+        window.location.href = `/applicant/applications/${app.id}`;
+      }, 1200);
+
+    } catch (err) {
+      setLoading(btn, false);
+      submitAfterSave = false;
+      showAlert(alertBox, err.message || 'Failed to create application.', 'error');
+    }
+  });
+</script>
+</body>
+</html>

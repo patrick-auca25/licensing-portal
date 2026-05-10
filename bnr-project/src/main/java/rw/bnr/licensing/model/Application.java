@@ -36,7 +36,7 @@ public class Application {
     private Long registeredCapital;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "application_status")
     @Builder.Default
     private ApplicationStatus status = ApplicationStatus.DRAFT;
 

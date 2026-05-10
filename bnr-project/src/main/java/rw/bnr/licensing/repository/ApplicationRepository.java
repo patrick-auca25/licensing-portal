@@ -13,29 +13,24 @@ import java.util.UUID;
 
 public interface ApplicationRepository extends JpaRepository<Application, UUID> {
 
-    // Applicant sees only their own applications
     List<Application> findByApplicantOrderByCreatedAtDesc(User applicant);
 
-    // Reviewer/Approver sees by status
-    List<Application> findByStatusOrderByCreatedAtAsc(ApplicationStatus status);
-
-    // Admin sees all
     List<Application> findAllByOrderByCreatedAtDesc();
 
-    // Reviewer sees what they are assigned to
     List<Application> findByReviewerOrderByCreatedAtDesc(User reviewer);
 
-    // Reference number lookup
     Optional<Application> findByReferenceNumber(String referenceNumber);
 
-    // Check reference uniqueness
     boolean existsByReferenceNumber(String referenceNumber);
 
-    // Applications available for a reviewer to claim (SUBMITTED, not yet assigned)
-    @Query("SELECT a FROM Application a WHERE a.status = 'SUBMITTED' " +
-           "ORDER BY a.submittedAt ASC")
-    List<Application> findSubmittedApplications();
+    // Separate queries per status group — avoids PostgreSQL ENUM IN() cast issue
+    @Query("SELECT a FROM Application a WHERE a.status IN " +
+           "('SUBMITTED', 'UNDER_REVIEW', 'ADDITIONAL_INFO_REQUESTED', 'REVIEWED') " +
+           "ORDER BY a.createdAt DESC")
+    List<Application> findForReviewer();
 
-    // Applications ready for final decision (REVIEWED)
-    List<Application> findByStatusIn(List<ApplicationStatus> statuses);
+    @Query("SELECT a FROM Application a WHERE a.status IN " +
+           "('REVIEWED', 'APPROVED', 'REJECTED') " +
+           "ORDER BY a.createdAt DESC")
+    List<Application> findForApprover();
 }

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Reviewer Dashboard — BNR Licensing Portal</title>
+  <link rel="stylesheet" href="/css/main.css"/>
+</head>
+<body>
+<div class="layout">
+  <div th:replace="~{shared/layout :: sidebar('dashboard')}"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title">Reviewer Dashboard</span>
+    </div>
+    <div class="content">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-label">Awaiting Review</div>
+          <div class="stat-value" id="stat-submitted" style="color:var(--info)">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">My Active Reviews</div>
+          <div class="stat-value" id="stat-mine">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Pending Info</div>
+          <div class="stat-value" id="stat-info" style="color:var(--warning)">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Completed</div>
+          <div class="stat-value" id="stat-done" style="color:var(--success)">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">Applications Queue</span></div>
+        <div class="card-body" style="padding:0">
+          <div id="loading" class="loading">Loading...</div>
+          <div id="empty" class="state-empty" style="display:none">
+            <div class="icon">✓</div>
+            <p>No applications pending review.</p>
+          </div>
+          <div class="table-wrap" id="table-wrap" style="display:none">
+            <table>
+              <thead>
+                <tr><th>Reference</th><th>Institution</th><th>Type</th><th>Status</th><th>Submitted</th><th>Reviewer</th><th>Action</th></tr>
+              </thead>
+              <tbody id="app-list"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!Auth.isLoggedIn()) window.location.href = '/login';
+
+  async function load() {
+    try {
+      const apps = await API.get('/api/applications', Auth.token());
+      document.getElementById('loading').style.display = 'none';
+
+      document.getElementById('stat-submitted').textContent =
+        apps.filter(a => a.status === 'SUBMITTED').length;
+      document.getElementById('stat-mine').textContent =
+        apps.filter(a => a.status === 'UNDER_REVIEW').length;
+      document.getElementById('stat-info').textContent =
+        apps.filter(a => a.status === 'ADDITIONAL_INFO_REQUESTED').length;
+      document.getElementById('stat-done').textContent =
+        apps.filter(a => a.status === 'REVIEWED').length;
+
+      const visible = apps.filter(a =>
+        ['SUBMITTED','UNDER_REVIEW','ADDITIONAL_INFO_REQUESTED','REVIEWED'].includes(a.status));
+
+      if (visible.length === 0) { document.getElementById('empty').style.display='block'; return; }
+      document.getElementById('table-wrap').style.display = 'block';
+
+      document.getElementById('app-list').innerHTML = visible.map(app => `
+        <tr>
+          <td><code style="font-family:var(--font-mono);font-size:.8rem">${app.referenceNumber}</code></td>
+          <td>${app.institutionName}</td>
+          <td>${app.institutionType}</td>
+          <td>${statusBadge(app.status)}</td>
+          <td class="text-muted">${app.submittedAt || '—'}</td>
+          <td class="text-muted">${app.reviewerName || '<em>Unassigned</em>'}</td>
+          <td><a href="/reviewer/applications/${app.id}" class="btn btn-outline btn-sm">
+            ${app.status === 'SUBMITTED' ? 'Claim' : 'View'}
+          </a></td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('loading').innerHTML =
+        `<div class="alert alert-error">${err.message}</div>`;
+    }
+  }
+  load();
+</script>
+</body>
+</html>

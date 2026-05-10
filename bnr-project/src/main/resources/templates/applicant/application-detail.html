@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Application Detail — BNR Licensing Portal</title>
+  <link rel="stylesheet" href="/css/main.css"/>
+</head>
+<body>
+<div class="layout">
+  <div id="sidebar-placeholder"></div>
+
+  <div class="main">
+    <div class="topbar">
+      <span class="page-title" id="page-title">Application Detail</span>
+      <div class="topbar-actions" id="topbar-actions"></div>
+    </div>
+
+    <div class="content">
+      <div id="alert-box"></div>
+      <div id="loading" class="loading">Loading application...</div>
+      <div id="app-content" style="display:none">
+
+        <!-- Header card -->
+        <div class="card mb-2" style="margin-bottom:16px">
+          <div class="card-body">
+            <div class="flex justify-between items-center">
+              <div>
+                <div class="text-muted" style="font-size:.75rem;margin-bottom:4px">REFERENCE NUMBER</div>
+                <div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:600" id="ref-num">—</div>
+              </div>
+              <div id="status-badge"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details -->
+        <div class="card mb-2" style="margin-bottom:16px">
+          <div class="card-header"><span class="card-title">Institution Details</span></div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="detail-item">
+                <div class="detail-label">Institution Name</div>
+                <div class="detail-value" id="d-name">—</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Institution Type</div>
+                <div class="detail-value" id="d-type">—</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Registered Capital</div>
+                <div class="detail-value" id="d-capital">—</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Applicant</div>
+                <div class="detail-value" id="d-applicant">—</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Submitted</div>
+                <div class="detail-value" id="d-submitted">—</div>
+              </div>
+              <div class="detail-item">
+                <div class="detail-label">Decision Date</div>
+                <div class="detail-value" id="d-decided">—</div>
+              </div>
+            </div>
+            <div class="detail-item mt-2" id="d-business-plan-wrap">
+              <div class="detail-label">Business Plan</div>
+              <div class="detail-value" id="d-business-plan" style="white-space:pre-wrap">—</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Workflow info -->
+        <div class="card mb-2" id="workflow-card" style="margin-bottom:16px;display:none">
+          <div class="card-header"><span class="card-title">Workflow Details</span></div>
+          <div class="card-body">
+            <div class="detail-grid">
+              <div class="detail-item" id="reviewer-row">
+                <div class="detail-label">Reviewer</div>
+                <div class="detail-value" id="d-reviewer">—</div>
+              </div>
+              <div class="detail-item" id="approver-row">
+                <div class="detail-label">Approver</div>
+                <div class="detail-value" id="d-approver">—</div>
+              </div>
+            </div>
+            <div id="reviewer-notes-wrap" style="display:none" class="mt-2">
+              <div class="detail-label">Reviewer Notes</div>
+              <div class="detail-value alert alert-info" id="d-reviewer-notes"></div>
+            </div>
+            <div id="rejection-wrap" style="display:none" class="mt-2">
+              <div class="detail-label">Rejection Reason</div>
+              <div class="detail-value alert alert-error" id="d-rejection"></div>
+            </div>
+            <div id="info-request-wrap" style="display:none" class="mt-2">
+              <div class="detail-label">Additional Information Requested</div>
+              <div class="detail-value alert alert-warning" id="d-info-request"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Documents -->
+        <div class="card mb-2" style="margin-bottom:16px">
+          <div class="card-header">
+            <span class="card-title">Documents</span>
+            <button id="upload-btn" class="btn btn-outline btn-sm" style="display:none"
+                    onclick="openModal('upload-modal')">Upload Document</button>
+          </div>
+          <div class="card-body" style="padding:0">
+            <div id="docs-empty" class="state-empty" style="display:none">
+              <p>No documents uploaded yet.</p>
+            </div>
+            <div class="table-wrap" id="docs-table-wrap" style="display:none">
+              <table>
+                <thead>
+                  <tr><th>File Name</th><th>Category</th><th>Size</th><th>Version</th><th>Uploaded By</th><th>Date</th><th>Current</th></tr>
+                </thead>
+                <tbody id="docs-list"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audit trail -->
+        <div class="card" id="audit-card" style="display:none">
+          <div class="card-header"><span class="card-title">Audit Trail</span></div>
+          <div class="card-body">
+            <div class="timeline" id="audit-timeline"></div>
+          </div>
+        </div>
+
+        <!-- Applicant action buttons -->
+        <div id="applicant-actions" style="display:none;margin-top:16px" class="flex gap-2">
+          <button id="btn-submit" class="btn btn-primary" onclick="submitApp()">Submit Application</button>
+          <button id="btn-resubmit" class="btn btn-gold" style="display:none" onclick="resubmitApp()">Resubmit with Documents</button>
+        </div>
+
+        <!-- Reviewer action buttons -->
+        <div id="reviewer-actions" style="display:none;margin-top:16px" class="flex gap-2">
+          <button id="btn-claim" class="btn btn-primary" onclick="claimReview()">Claim for Review</button>
+          <button id="btn-request-info" class="btn btn-outline" style="display:none"
+                  onclick="openModal('info-modal')">Request Information</button>
+          <button id="btn-complete-review" class="btn btn-gold" style="display:none"
+                  onclick="openModal('review-modal')">Complete Review</button>
+        </div>
+
+        <!-- Approver action buttons -->
+        <div id="approver-actions" style="display:none;margin-top:16px" class="flex gap-2">
+          <button id="btn-approve" class="btn btn-success" onclick="approveApp()">Approve Application</button>
+          <button id="btn-reject" class="btn btn-danger" onclick="openModal('reject-modal')">Reject Application</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Upload modal -->
+<div class="modal-overlay" id="upload-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Upload Document</span>
+      <button class="modal-close" onclick="closeModal('upload-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="upload-alert"></div>
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select id="doc-category" class="form-control">
+          <option value="BUSINESS_PLAN">Business Plan</option>
+          <option value="FINANCIAL_STATEMENTS">Financial Statements</option>
+          <option value="INCORPORATION_DOCS">Incorporation Documents</option>
+          <option value="CAPITAL_PROOF">Capital Proof</option>
+          <option value="GENERAL">General</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">File (PDF, JPG, PNG — max 5MB)</label>
+        <input type="file" id="doc-file" class="form-control" accept=".pdf,.jpg,.jpeg,.png"/>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('upload-modal')">Cancel</button>
+      <button class="btn btn-primary" id="upload-confirm-btn" onclick="uploadDoc()">Upload</button>
+    </div>
+  </div>
+</div>
+
+<!-- Request info modal -->
+<div class="modal-overlay" id="info-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Request Additional Information</span>
+      <button class="modal-close" onclick="closeModal('info-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="info-alert"></div>
+      <div class="form-group">
+        <label class="form-label">Details of information required <span class="required">*</span></label>
+        <textarea id="info-request-text" class="form-control" rows="4"
+                  placeholder="Specify exactly what documents or information the applicant must provide..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('info-modal')">Cancel</button>
+      <button class="btn btn-gold" id="info-confirm-btn" onclick="requestInfo()">Send Request</button>
+    </div>
+  </div>
+</div>
+
+<!-- Complete review modal -->
+<div class="modal-overlay" id="review-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Complete Review</span>
+      <button class="modal-close" onclick="closeModal('review-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="review-alert"></div>
+      <div class="form-group">
+        <label class="form-label">Review Notes &amp; Recommendation <span class="required">*</span></label>
+        <textarea id="review-notes-text" class="form-control" rows="4"
+                  placeholder="Summarise your assessment and recommendation for the approver..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('review-modal')">Cancel</button>
+      <button class="btn btn-gold" id="review-confirm-btn" onclick="completeReview()">Submit Review</button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject modal -->
+<div class="modal-overlay" id="reject-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Reject Application</span>
+      <button class="modal-close" onclick="closeModal('reject-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="alert alert-warning">This action is permanent and cannot be undone.</div>
+      <div id="reject-alert"></div>
+      <div class="form-group">
+        <label class="form-label">Rejection Reason <span class="required">*</span></label>
+        <textarea id="reject-reason-text" class="form-control" rows="4"
+                  placeholder="State the regulatory grounds for rejection..."></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal('reject-modal')">Cancel</button>
+      <button class="btn btn-danger" id="reject-confirm-btn" onclick="rejectApp()">Confirm Rejection</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/main.js"></script>
+<script>
+  if (!Auth.isLoggedIn()) window.location.href = '/login';
+
+  const user = Auth.user();
+  const appId = window.location.pathname.split('/').filter(Boolean).pop();
+  let currentApp = null;
+
+  async function loadApp() {
+    try {
+      currentApp = await API.get(`/api/applications/${appId}`, Auth.token());
+      renderApp(currentApp);
+      loadDocuments();
+      if (['ADMIN','REVIEWER','APPROVER'].includes(user.role)) loadAudit();
+    } catch (err) {
+      document.getElementById('loading').innerHTML =
+        `<div class="alert alert-error">Failed to load: ${err.message}</div>`;
+    }
+  }
+
+  function renderApp(app) {
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('app-content').style.display = 'block';
+    document.getElementById('page-title').textContent = app.referenceNumber;
+    document.getElementById('ref-num').textContent = app.referenceNumber;
+    document.getElementById('status-badge').innerHTML = statusBadge(app.status);
+    document.getElementById('d-name').textContent = app.institutionName;
+    document.getElementById('d-type').textContent = app.institutionType;
+    document.getElementById('d-capital').textContent = formatRWF(app.registeredCapital);
+    document.getElementById('d-applicant').textContent = app.applicantName;
+    document.getElementById('d-submitted').textContent = app.submittedAt || '—';
+    document.getElementById('d-decided').textContent = app.decidedAt || '—';
+    document.getElementById('d-business-plan').textContent = app.businessPlan || '—';
+
+    // Workflow section
+    if (app.reviewerName || app.approverName || app.reviewerNotes || app.rejectionReason) {
+      document.getElementById('workflow-card').style.display = 'block';
+      document.getElementById('d-reviewer').textContent = app.reviewerName || '—';
+      document.getElementById('d-approver').textContent = app.approverName || '—';
+      if (app.reviewerNotes) {
+        document.getElementById('reviewer-notes-wrap').style.display = 'block';
+        document.getElementById('d-reviewer-notes').textContent = app.reviewerNotes;
+      }
+      if (app.rejectionReason) {
+        document.getElementById('rejection-wrap').style.display = 'block';
+        document.getElementById('d-rejection').textContent = app.rejectionReason;
+      }
+      if (app.additionalInfoRequest) {
+        document.getElementById('info-request-wrap').style.display = 'block';
+        document.getElementById('d-info-request').textContent = app.additionalInfoRequest;
+      }
+    }
+
+    renderActions(app);
+  }
+
+  function renderActions(app) {
+    const status = app.status;
+    const terminal = ['APPROVED','REJECTED'].includes(status);
+
+    // APPLICANT actions
+    if (user.role === 'APPLICANT') {
+      const wrap = document.getElementById('applicant-actions');
+      if (!terminal) wrap.style.display = 'flex';
+      document.getElementById('upload-btn').style.display =
+        (user.role === 'APPLICANT' && canApplicantUpload(status)) ? 'inline-flex' : 'none';
+      if (status === 'DRAFT')
+        document.getElementById('btn-submit').style.display = 'inline-flex';
+      if (status === 'ADDITIONAL_INFO_REQUESTED') {
+        document.getElementById('btn-submit').style.display = 'none';
+        document.getElementById('btn-resubmit').style.display = 'inline-flex';
+      }
+    }
+
+    // REVIEWER actions
+    if (user.role === 'REVIEWER') {
+      const wrap = document.getElementById('reviewer-actions');
+      if (status === 'SUBMITTED') {
+        wrap.style.display = 'flex';
+        document.getElementById('btn-claim').style.display = 'inline-flex';
+      }
+      if (status === 'UNDER_REVIEW') {
+        wrap.style.display = 'flex';
+        document.getElementById('btn-claim').style.display = 'none';
+        document.getElementById('btn-request-info').style.display = 'inline-flex';
+        document.getElementById('btn-complete-review').style.display = 'inline-flex';
+      }
+    }
+
+    // APPROVER actions
+    if (user.role === 'APPROVER' && status === 'REVIEWED') {
+      document.getElementById('approver-actions').style.display = 'flex';
+    }
+
+    // Audit trail for staff
+    if (['ADMIN','REVIEWER','APPROVER'].includes(user.role)) {
+      document.getElementById('audit-card').style.display = 'block';
+    }
+  }
+
+  async function loadDocuments() {
+    try {
+      const docs = await API.get(`/api/applications/${appId}/documents`, Auth.token());
+      const tbody = document.getElementById('docs-list');
+      if (docs.length === 0) {
+        document.getElementById('docs-empty').style.display = 'block';
+        return;
+      }
+      document.getElementById('docs-table-wrap').style.display = 'block';
+      tbody.innerHTML = docs.map(d => `
+        <tr>
+          <td>${d.fileName}</td>
+          <td>${d.documentCategory || '—'}</td>
+          <td class="text-muted">${(d.fileSize/1024).toFixed(1)} KB</td>
+          <td><span class="badge badge-draft">v${d.versionNumber}</span></td>
+          <td>${d.uploaderName}</td>
+          <td class="text-muted">${d.uploadedAt || '—'}</td>
+          <td>${d.current ? '✅' : '<span class="text-muted">—</span>'}</td>
+        </tr>
+      `).join('');
+    } catch (err) {
+      document.getElementById('docs-empty').style.display = 'block';
+    }
+  }
+
+  async function loadAudit() {
+    try {
+      const entries = await API.get(`/api/audit/applications/${appId}`, Auth.token());
+      const timeline = document.getElementById('audit-timeline');
+      timeline.innerHTML = entries.map(e => `
+        <div class="timeline-item">
+          <div class="timeline-action">${e.action.replace(/_/g,' ')}</div>
+          <div class="timeline-meta">${e.actor?.fullName || e.actor?.email || '—'} · ${e.createdAt || ''}</div>
+          ${e.stateBefore ? `<div class="timeline-detail">${e.stateBefore} → ${e.stateAfter}</div>` : ''}
+        </div>
+      `).join('');
+    } catch (err) { /* audit not visible to applicants */ }
+  }
+
+  async function submitApp() {
+    const btn = document.getElementById('btn-submit');
+    setLoading(btn, true);
+    try {
+      await API.post(`/api/applications/${appId}/submit`, {}, Auth.token());
+      location.reload();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('alert-box'), err.message, 'error');
+    }
+  }
+
+  async function resubmitApp() {
+    const btn = document.getElementById('btn-resubmit');
+    setLoading(btn, true);
+    try {
+      await API.post(`/api/applications/${appId}/resubmit`, {}, Auth.token());
+      location.reload();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('alert-box'), err.message, 'error');
+    }
+  }
+
+  async function claimReview() {
+    const btn = document.getElementById('btn-claim');
+    setLoading(btn, true);
+    try {
+      await API.post(`/api/applications/${appId}/start-review`, {}, Auth.token());
+      location.reload();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('alert-box'), err.message, 'error');
+    }
+  }
+
+  async function requestInfo() {
+    const text = document.getElementById('info-request-text').value.trim();
+    if (!text) { showAlert(document.getElementById('info-alert'), 'Details are required.', 'error'); return; }
+    const btn = document.getElementById('info-confirm-btn');
+    setLoading(btn, true);
+    try {
+      await API.post(`/api/applications/${appId}/request-info`,
+        { additionalInfoRequest: text }, Auth.token());
+      closeModal('info-modal');
+      location.reload();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('info-alert'), err.message, 'error');
+    }
+  }
+
+  async function completeReview() {
+    const notes = document.getElementById('review-notes-text').value.trim();
+    if (!notes) { showAlert(document.getElementById('review-alert'), 'Notes are required.', 'error'); return; }
+    const btn = document.getElementById('review-confirm-btn');
+    setLoading(btn, true);
+    try {
+      await API.post(`/api/applications/${appId}/complete-review`,
+        { notes }, Auth.token());
+      closeModal('review-modal');
+      location.reload();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('review-alert'), err.message, 'error');
+    }
+  }
+
+  async function approveApp() {
+    if (!confirm('Approve this application? This decision is permanent.')) return;
+    const btn = document.getElementById('btn-approve');
+    setLoading(btn, true);
+    try {
+      await API.post(`/api/applications/${appId}/approve`, {}, Auth.token());
+      location.reload();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('alert-box'), err.message, 'error');
+    }
+  }
+
+  async function rejectApp() {
+    const reason = document.getElementById('reject-reason-text').value.trim();
+    if (!reason) { showAlert(document.getElementById('reject-alert'), 'Rejection reason is mandatory.', 'error'); return; }
+    const btn = document.getElementById('reject-confirm-btn');
+    setLoading(btn, true);
+    try {
+      await API.post(`/api/applications/${appId}/reject`,
+        { reason }, Auth.token());
+      closeModal('reject-modal');
+      location.reload();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('reject-alert'), err.message, 'error');
+    }
+  }
+
+  async function uploadDoc() {
+    const file = document.getElementById('doc-file').files[0];
+    const category = document.getElementById('doc-category').value;
+    if (!file) { showAlert(document.getElementById('upload-alert'), 'Please select a file.', 'error'); return; }
+    const btn = document.getElementById('upload-confirm-btn');
+    setLoading(btn, true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('category', category);
+      const res = await fetch(`/api/applications/${appId}/documents`, {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + Auth.token() },
+        body: formData
+      });
+      const data = await res.json();
+      if (!res.ok) throw { message: data.message };
+      closeModal('upload-modal');
+      loadDocuments();
+    } catch (err) {
+      setLoading(btn, false);
+      showAlert(document.getElementById('upload-alert'), err.message || 'Upload failed.', 'error');
+    }
+  }
+
+  loadApp();
+</script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- Sidebar fragment — role determined from JS sessionStorage -->
+<aside th:fragment="sidebar(active)" class="sidebar" id="app-sidebar">
+  <div class="sidebar-brand">
+    <div class="logo-text">National Bank of Rwanda</div>
+    <div class="portal-name">Licensing Portal</div>
+  </div>
+  <nav class="sidebar-nav" id="sidebar-nav">
+    <!-- Populated by JS based on role -->
+  </nav>
+  <div class="sidebar-footer">
+    <div class="user-info">
+      <div class="user-avatar" id="user-avatar">?</div>
+      <div>
+        <div class="user-name" id="user-name">Loading...</div>
+        <div class="user-role" id="user-role"></div>
+      </div>
+    </div>
+    <a href="#" onclick="signOut(); return false;" class="nav-item" style="padding:8px 0;margin-top:4px">
+      <span class="icon">⏻</span> Sign out
+    </a>
+  </div>
+</aside>
+
+<script>
+(function() {
+  // Guard: redirect to login if not authenticated
+  const token = sessionStorage.getItem('bnr_token');
+  const userStr = sessionStorage.getItem('bnr_user');
+  if (!token || !userStr) { window.location.href = '/login'; return; }
+
+  const user = JSON.parse(userStr);
+  const role = user.role;
+  const active = document.currentScript.closest('aside')?.dataset?.active || '';
+
+  // Populate user info in footer
+  document.getElementById('user-avatar').textContent =
+    user.fullName ? user.fullName.charAt(0).toUpperCase() : '?';
+  document.getElementById('user-name').textContent = user.fullName || user.email;
+  document.getElementById('user-role').textContent = role;
+
+  // Build nav based on role
+  const navs = {
+    APPLICANT: [
+      { href: '/applicant/dashboard',          icon: '⊞', label: 'Dashboard',       key: 'dashboard' },
+      { href: '/applicant/applications/new',   icon: '＋', label: 'New Application', key: 'new' },
+    ],
+    REVIEWER: [
+      { href: '/reviewer/dashboard',  icon: '⊞', label: 'Dashboard',    key: 'dashboard' },
+      { href: '/reviewer/dashboard',  icon: '⧖', label: 'Review Queue', key: 'queue' },
+    ],
+    APPROVER: [
+      { href: '/approver/dashboard',  icon: '⊞', label: 'Dashboard',         key: 'dashboard' },
+      { href: '/approver/dashboard',  icon: '◎', label: 'Pending Decisions',  key: 'pending' },
+    ],
+    ADMIN: [
+      { href: '/admin/dashboard',  icon: '⊞', label: 'Dashboard',         key: 'dashboard' },
+      { href: '/admin/dashboard',  icon: '≡', label: 'All Applications',  key: 'applications' },
+      { href: '/admin/dashboard',  icon: '⚇', label: 'Users',             key: 'users' },
+    ]
+  };
+
+  const items = navs[role] || [];
+  const currentPath = window.location.pathname;
+
+  document.getElementById('sidebar-nav').innerHTML = items.map(item => `
+    <a href="${item.href}"
+       class="nav-item${currentPath === item.href ? ' active' : ''}">
+      <span class="icon">${item.icon}</span> ${item.label}
+    </a>
+  `).join('');
+})();
+</script>
+</body>
+</html>
