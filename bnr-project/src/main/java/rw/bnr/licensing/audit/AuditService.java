@@ -36,8 +36,8 @@ public class AuditService {
                 .actor(actor)
                 .application(application)
                 .action("STATE_TRANSITION")
-                .stateBefore(from != null ? from.name() : null)
-                .stateAfter(to.name())
+            .stateBefore(from != null ? from.getCode() : null)
+            .stateAfter(to.getCode())
                 .metadata(metadata)
                 .build());
     }

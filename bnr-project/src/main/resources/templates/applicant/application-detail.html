@@ -16,6 +16,14 @@
     </div>
 
     <div class="content">
+      <div class="page-intro">
+        <div>
+          <div class="page-eyebrow">Application record</div>
+          <h1>Review the full submission timeline</h1>
+          <p class="page-subtitle">See institution details, supporting documents, audit history, and role-specific actions from a cleaner record layout.</p>
+        </div>
+      </div>
+
       <div id="alert-box"></div>
       <div id="loading" class="loading">Loading application...</div>
       <div id="app-content" style="display:none">
@@ -312,18 +320,24 @@
   function renderActions(app) {
     const status = app.status;
     const terminal = ['APPROVED','REJECTED'].includes(status);
+    const applicantActionable = ['DRAFT', 'ADDITIONAL_INFO_REQUESTED'].includes(status);
 
     // APPLICANT actions
     if (user.role === 'APPLICANT') {
       const wrap = document.getElementById('applicant-actions');
-      if (!terminal) wrap.style.display = 'flex';
+      const submitBtn = document.getElementById('btn-submit');
+      const resubmitBtn = document.getElementById('btn-resubmit');
+
+      wrap.style.display = applicantActionable ? 'flex' : 'none';
       document.getElementById('upload-btn').style.display =
         (user.role === 'APPLICANT' && canApplicantUpload(status)) ? 'inline-flex' : 'none';
+      submitBtn.style.display = 'none';
+      resubmitBtn.style.display = 'none';
+
       if (status === 'DRAFT')
-        document.getElementById('btn-submit').style.display = 'inline-flex';
+        submitBtn.style.display = 'inline-flex';
       if (status === 'ADDITIONAL_INFO_REQUESTED') {
-        document.getElementById('btn-submit').style.display = 'none';
-        document.getElementById('btn-resubmit').style.display = 'inline-flex';
+        resubmitBtn.style.display = 'inline-flex';
       }
     }
 

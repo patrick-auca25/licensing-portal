@@ -35,8 +35,8 @@ public class Application {
     @Column(name = "registered_capital")
     private Long registeredCapital;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false, columnDefinition = "application_status")
+    @Convert(converter = ApplicationStatusConverter.class)
+    @Column(nullable = false, length = 3)
     @Builder.Default
     private ApplicationStatus status = ApplicationStatus.DRAFT;
 

@@ -12,6 +12,8 @@ public class ApplicationResponse {
     private String businessPlan;
     private Long registeredCapital;
     private String status;
+    private String statusCode;
+    private String statusDescription;
     private Long version;  // exposed for optimistic locking on client side
 
     // People involved

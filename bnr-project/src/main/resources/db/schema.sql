@@ -12,7 +12,6 @@ DROP TABLE IF EXISTS applications CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
 DROP TYPE IF EXISTS user_role CASCADE;
-DROP TYPE IF EXISTS application_status CASCADE;
 
 -- ── Enums ───────────────────────────────────────────────────
 CREATE TYPE user_role AS ENUM (
@@ -22,23 +21,13 @@ CREATE TYPE user_role AS ENUM (
     'ADMIN'
 );
 
-CREATE TYPE application_status AS ENUM (
-    'DRAFT',
-    'SUBMITTED',
-    'UNDER_REVIEW',
-    'ADDITIONAL_INFO_REQUESTED',
-    'REVIEWED',
-    'APPROVED',
-    'REJECTED'
-);
-
 -- ── Users ────────────────────────────────────────────────────
 CREATE TABLE users (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email           VARCHAR(255) NOT NULL UNIQUE,
     password_hash   VARCHAR(255) NOT NULL,
     full_name       VARCHAR(255) NOT NULL,
-    role            user_role    NOT NULL,
+    role            VARCHAR(50)  NOT NULL,
     active          BOOLEAN      NOT NULL DEFAULT TRUE,
     created_at      TIMESTAMP    NOT NULL DEFAULT NOW()
 );
@@ -55,7 +44,7 @@ CREATE TABLE applications (
     institution_type            VARCHAR(100)       NOT NULL,
     business_plan               TEXT,
     registered_capital          BIGINT,
-    status                      application_status NOT NULL DEFAULT 'DRAFT',
+    status                      VARCHAR(3)         NOT NULL DEFAULT 'DRF',
     version                     BIGINT             NOT NULL DEFAULT 0,
     reviewer_id                 UUID               REFERENCES users(id),
     approver_id                 UUID               REFERENCES users(id),
@@ -65,7 +54,9 @@ CREATE TABLE applications (
     submitted_at                TIMESTAMP,
     decided_at                  TIMESTAMP,
     created_at                  TIMESTAMP          NOT NULL DEFAULT NOW(),
-    updated_at                  TIMESTAMP          NOT NULL DEFAULT NOW()
+    updated_at                  TIMESTAMP          NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_applications_status
+        CHECK (status IN ('DRF', 'SUB', 'URV', 'AIR', 'REV', 'APV', 'REJ'))
 );
 
 CREATE INDEX idx_applications_applicant  ON applications(applicant_id);

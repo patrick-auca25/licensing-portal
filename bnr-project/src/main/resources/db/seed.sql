@@ -45,7 +45,7 @@ INSERT INTO users (id, email, password_hash, full_name, role, active) VALUES
     TRUE
 );
 
--- ── Application 1: SUBMITTED ─────────────────────────────────
+-- ── Application 1: SUB (Submitted) ───────────────────────────
 INSERT INTO applications (
     id, reference_number, applicant_id,
     institution_name, institution_type,
@@ -59,12 +59,12 @@ INSERT INTO applications (
     'Commercial Bank',
     'A full-service commercial bank targeting SMEs in Rwanda with mobile-first banking.',
     5000000000,
-    'SUBMITTED',
+    'SUB',
     0,
     NOW() - INTERVAL '2 days'
 );
 
--- ── Application 2: UNDER_REVIEW ──────────────────────────────
+-- ── Application 2: URV (Under Review) ────────────────────────
 INSERT INTO applications (
     id, reference_number, applicant_id,
     institution_name, institution_type,
@@ -78,7 +78,7 @@ INSERT INTO applications (
     'Microfinance Institution',
     'Providing micro-credit and savings to rural communities across all provinces.',
     500000000,
-    'UNDER_REVIEW',
+    'URV',
     1,
     'a0000002-0000-0000-0000-000000000002',
     NOW() - INTERVAL '5 days'
@@ -90,23 +90,23 @@ INSERT INTO audit_log (application_id, actor_id, action, state_before, state_aft
     'b0000001-0000-0000-0000-000000000001',
     'a0000001-0000-0000-0000-000000000001',
     'APPLICATION_SUBMITTED',
-    'DRAFT',
-    'SUBMITTED',
+    'DRF',
+    'SUB',
     '{"note": "Initial submission by applicant"}'
 ),
 (
     'b0000002-0000-0000-0000-000000000002',
     'a0000001-0000-0000-0000-000000000001',
     'APPLICATION_SUBMITTED',
-    'DRAFT',
-    'SUBMITTED',
+    'DRF',
+    'SUB',
     '{"note": "Initial submission by applicant"}'
 ),
 (
     'b0000002-0000-0000-0000-000000000002',
     'a0000002-0000-0000-0000-000000000002',
     'REVIEW_STARTED',
-    'SUBMITTED',
-    'UNDER_REVIEW',
+    'SUB',
+    'URV',
     '{"note": "Reviewer Bob Nkurunziza claimed the application"}'
 );

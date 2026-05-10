@@ -165,6 +165,8 @@ public class ApplicationService {
                 .businessPlan(app.getBusinessPlan())
                 .registeredCapital(app.getRegisteredCapital())
                 .status(app.getStatus().name())
+                .statusCode(app.getStatus().getCode())
+                .statusDescription(app.getStatus().getDescription())
                 .version(app.getVersion())
                 .applicantName(app.getApplicant().getFullName())
                 .applicantEmail(app.getApplicant().getEmail())

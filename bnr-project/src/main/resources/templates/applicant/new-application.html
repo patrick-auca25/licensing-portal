@@ -16,6 +16,14 @@
     </div>
 
     <div class="content">
+      <div class="page-intro">
+        <div>
+          <div class="page-eyebrow">Application intake</div>
+          <h1>Start a new licence request</h1>
+          <p class="page-subtitle">Capture the institution profile, capital details, and business plan in a form that is easier to scan and complete.</p>
+        </div>
+      </div>
+
       <div class="card" style="max-width:680px">
         <div class="card-header">
           <span class="card-title">Institution Details</span>
@@ -117,7 +125,7 @@
       }
 
       setTimeout(() => {
-        window.location.href = `/applicant/applications/${app.id}`;
+        window.location.href = `/applicant/dashboard`;
       }, 1200);
 
     } catch (err) {
