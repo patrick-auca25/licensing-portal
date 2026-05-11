@@ -1,0 +1,856 @@
+{
+  "info": {
+    "_postman_id": "dd571d2b-5129-44c3-9549-b8ca6d7ca033",
+    "name": "BNR Licensing Portal — Full API Test Suite",
+    "description": "Complete test sequence covering all 11 scenarios. Run in order. Update APP_ID after Test 3.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "47286020"
+  },
+  "item": [
+    {
+      "name": "AUTH",
+      "item": [
+        {
+          "name": "Login as APPLICANT",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Token present', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.token).to.exist;",
+                  "  pm.expect(body.role).to.equal('APPLICANT');",
+                  "  pm.collectionVariables.set('APPLICANT_TOKEN', body.token);",
+                  "  console.log('APPLICANT token saved');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"applicant@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as REVIEWER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.role).to.equal('REVIEWER');",
+                  "pm.collectionVariables.set('REVIEWER_TOKEN', body.token);",
+                  "console.log('REVIEWER token saved');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"reviewer@bnr.rw\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as APPROVER",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.role).to.equal('APPROVER');",
+                  "pm.collectionVariables.set('APPROVER_TOKEN', body.token);",
+                  "console.log('APPROVER token saved');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"approver@bnr.rw\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Login as ADMIN",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const body = pm.response.json();",
+                  "pm.expect(body.role).to.equal('ADMIN');",
+                  "pm.collectionVariables.set('ADMIN_TOKEN', body.token);",
+                  "console.log('ADMIN token saved');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@bnr.rw\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "APPLICATION WORKFLOW",
+      "item": [
+        {
+          "name": "List applications as APPLICANT (role-filtered)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Returns array', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.be.an('array');",
+                  "  console.log('Applications visible to APPLICANT:', body.length);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPLICANT_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create DRAFT application → save APP_ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 Created', () => pm.response.to.have.status(201));",
+                  "pm.test('Status is DRAFT', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.equal('DRAFT');",
+                  "  pm.expect(body.id).to.exist;",
+                  "  pm.collectionVariables.set('APP_ID', body.id);",
+                  "  console.log('APP_ID saved:', body.id);",
+                  "  console.log('Reference:', body.referenceNumber);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPLICANT_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institutionName\": \"Test Savings Bank Ltd\",\n  \"institutionType\": \"Savings Bank\",\n  \"businessPlan\": \"Providing savings accounts and micro-loans to low income households across Rwanda.\",\n  \"registeredCapital\": 1000000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit application → SUBMITTED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is SUBMITTED', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.equal('SUBMITTED');",
+                  "  pm.expect(body.submittedAt).to.exist;",
+                  "  console.log('Submitted at:', body.submittedAt);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPLICANT_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{APP_ID}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{APP_ID}}",
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "REVIEWER claims application → UNDER_REVIEW",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is UNDER_REVIEW and reviewer set', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.equal('UNDER_REVIEW');",
+                  "  pm.expect(body.reviewerName).to.equal('Bob Nkurunziza');",
+                  "  console.log('Reviewer assigned:', body.reviewerName);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{REVIEWER_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{APP_ID}}/start-review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{APP_ID}}",
+                "start-review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "REVIEWER completes review → REVIEWED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is REVIEWED', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.equal('REVIEWED');",
+                  "  pm.expect(body.reviewerNotes).to.exist;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{REVIEWER_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"All documents verified. Capital requirements met. Business plan is sound. Recommend approval.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{APP_ID}}/complete-review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{APP_ID}}",
+                "complete-review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "APPROVER approves → APPROVED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is APPROVED and decided', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.equal('APPROVED');",
+                  "  pm.expect(body.decidedAt).to.exist;",
+                  "  pm.expect(body.approverName).to.equal('Claire Mukamana');",
+                  "  console.log('Approved at:', body.decidedAt);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPROVER_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{APP_ID}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{APP_ID}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AUDIT TRAIL",
+      "item": [
+        {
+          "name": "Get full audit trail for application",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Audit entries exist', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.be.an('array');",
+                  "  pm.expect(body.length).to.be.at.least(4);",
+                  "  console.log('Total audit entries:', body.length);",
+                  "  body.forEach(e => console.log(e.action, e.stateBefore, '->', e.stateAfter));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPROVER_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/audit/applications/{{APP_ID}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "audit",
+                "applications",
+                "{{APP_ID}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "REJECTION FLOW",
+      "item": [
+        {
+          "name": "R01 — Create new application for rejection test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('REJECT_APP_ID', body.id);",
+                  "console.log('Rejection test APP_ID:', body.id);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPLICANT_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"institutionName\": \"Weak Capital Bank\",\n  \"institutionType\": \"Commercial Bank\",\n  \"businessPlan\": \"Undercapitalised bank for rejection testing.\",\n  \"registeredCapital\": 100000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "R02 — Submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPLICANT_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{REJECT_APP_ID}}/submit",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{REJECT_APP_ID}}",
+                "submit"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "R03 — Reviewer claims",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{REVIEWER_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{REJECT_APP_ID}}/start-review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{REJECT_APP_ID}}",
+                "start-review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "R04 — Reviewer completes",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{REVIEWER_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Capital below minimum threshold. Does not meet requirements.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{REJECT_APP_ID}}/complete-review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{REJECT_APP_ID}}",
+                "complete-review"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "R05 — Reject WITHOUT reason → expect 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 400 — rejection reason required', () => pm.response.to.have.status(400));",
+                  "console.log('Mandatory rejection reason enforced correctly');"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPROVER_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{REJECT_APP_ID}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{REJECT_APP_ID}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "R06 — Reject WITH reason → REJECTED",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Status is REJECTED', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.status).to.equal('REJECTED');",
+                  "  pm.expect(body.rejectionReason).to.exist;",
+                  "  pm.expect(body.decidedAt).to.exist;",
+                  "  console.log('Rejected at:', body.decidedAt);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{APPROVER_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Registered capital of RWF 100,000 is below the minimum threshold of RWF 500,000,000 required for a commercial banking licence.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/applications/{{REJECT_APP_ID}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "applications",
+                "{{REJECT_APP_ID}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "ADMIN",
+      "item": [
+        {
+          "name": "Admin creates new user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('User created with correct role', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body.role).to.equal('REVIEWER');",
+                  "  pm.expect(body.email).to.equal('newreviewer@bnr.rw');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ADMIN_TOKEN}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"newreviewer@bnr.rw\",\n  \"password\": \"Password123!\",\n  \"fullName\": \"Eve Ingabire\",\n  \"role\": \"REVIEWER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin lists all users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Users returned', () => {",
+                  "  const body = pm.response.json();",
+                  "  pm.expect(body).to.be.an('array');",
+                  "  pm.expect(body.length).to.be.at.least(4);",
+                  "  console.log('Total users:', body.length);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{ADMIN_TOKEN}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "APPLICANT_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "REVIEWER_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "APPROVER_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "ADMIN_TOKEN",
+      "value": ""
+    },
+    {
+      "key": "APP_ID",
+      "value": ""
+    }
+  ]
+}
